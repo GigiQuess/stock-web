@@ -1,0 +1,75 @@
+version: "3.8"
+
+services:
+  # Backend App (Go + Gin + Ent)
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: stock_app
+    restart: always
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - DB_NAME=appdb
+      - DB_HOST=db
+      - DB_PORT=5432
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`localhost`) && PathPrefix(`/api`)"
+      - "traefik.http.services.app.loadbalancer.server.port=8080"
+      - "traefik.http.routers.app.entrypoints=web"
+
+  # Frontend App (React)
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: stock_web
+    restart: always
+    volumes:
+      - ./frontend/src:/app/src
+    ports:
+      - "3000:3000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`localhost`)"
+      - "traefik.http.services.web.loadbalancer.server.port=3000"
+      - "traefik.http.routers.web.entrypoints=web"
+
+  # Database (PostgreSQL)
+  db:
+    image: postgres:14-alpine
+    container_name: stock_db
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=appdb
+    ports:
+      - "5432:5432"
+
+  # Reverse Proxy (Traefik)
+  traefik:
+    image: traefik:v2.9
+    container_name: stock_traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8081:8080" # Traefik Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  postgres_data:
