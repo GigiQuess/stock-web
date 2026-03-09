@@ -1,27 +1,31 @@
-# Start from the official Go image
-FROM golang:1.19-alpine
+# Builder stage
+FROM golang:1.19-alpine AS builder
 
-# Set the working directory
 WORKDIR /app
 
-# Install ent
-RUN go install ent.io/ent/cmd/ent@latest
+# Copy the Go module files and download dependencies
+COPY go.mod go.sum ./
+RUN go mod download
 
-# Copy go mod file
-COPY go.mod ./
-
-# Copy source code
+# Copy the rest of the source code
 COPY . .
 
-# Generate ent code
-RUN /root/go/bin/ent generate ./ent/schema
+# Generate Ent code
+RUN go run entgo.io/ent/cmd/entc generate ./ent/schema
 
-# Download dependencies and build
-RUN go mod tidy
-RUN go build -o main .
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/main .
+
+# Final stage
+FROM alpine:latest
+
+WORKDIR /app
+
+# Copy the built binary from the builder stage
+COPY --from=builder /app/main .
 
 # Expose port 8080
 EXPOSE 8080
 
-# Run the executable
+# Command to run the application
 CMD ["./main"]

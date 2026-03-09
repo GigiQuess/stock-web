@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"os"
 
-	"stock-web/backend/ent"
+	"github.com/k3243/stock-web/backend/ent"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 )
@@ -34,6 +35,7 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.Use(cors.Default())
 
 	r.GET("/api/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
