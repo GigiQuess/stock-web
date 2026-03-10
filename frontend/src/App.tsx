@@ -14,9 +14,15 @@ function App() {
   const [email, setEmail] = useState<string>('');
 
   useEffect(() => {
-    fetch('/api/ping')
+    fetch('/api/users')
       .then(res => res.json())
-      .then(data => setMessage(data.message));
+      .then((data: User[]) => {
+        setUsers(data);
+        // Also ping the backend just to show the message
+        fetch('/api/ping')
+          .then(res => res.json())
+          .then(data => setMessage(data.message));
+      });
   }, []);
 
   const createUser = (e: React.FormEvent) => {

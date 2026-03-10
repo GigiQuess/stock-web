@@ -65,6 +65,16 @@ func main() {
 		c.JSON(http.StatusOK, user)
 	})
 
+	// Endpoint to get all users
+	r.GET("/api/users", func(c *gin.Context) {
+		users, err := client.User.Query().All(context.Background())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, users)
+	})
+
 
 	r.Run(":8080")
 }

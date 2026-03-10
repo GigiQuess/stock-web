@@ -3,29 +3,30 @@ FROM golang:1.19-alpine AS builder
 
 WORKDIR /app
 
-# Copy the Go module files and download dependencies
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copy the rest of the source code
+# Copy all source files first
 COPY . .
 
-# Generate Ent code
-RUN go run entgo.io/ent/cmd/entc generate ./ent/schema
+# Install git, which is needed for go mod tidy
+RUN apk add --no-cache git
+
+# Tidy downloads dependencies and creates a correct go.sum
+RUN go mod tidy
+
+
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/main .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /main .
 
 # Final stage
-FROM alpine:latest
+FROM golang:1.19-alpine
 
 WORKDIR /app
 
 # Copy the built binary from the builder stage
-COPY --from=builder /app/main .
+COPY --from=builder /main /main
 
 # Expose port 8080
 EXPOSE 8080
 
 # Command to run the application
-CMD ["./main"]
+CMD ["/main"]

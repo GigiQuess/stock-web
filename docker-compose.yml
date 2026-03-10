@@ -57,7 +57,7 @@ services:
 
   # Reverse Proxy (Traefik)
   traefik:
-    image: traefik:v2.9
+    image: traefik:v2.11
     container_name: stock_traefik
     ports:
       - "80:80"
