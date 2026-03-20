@@ -1,0 +1,10 @@
+---
+- name: Setup Web Application
+  hosts: all
+  become: yes
+  tasks:
+    - name: Ensure Docker is installed
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
